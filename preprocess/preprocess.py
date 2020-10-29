@@ -146,6 +146,6 @@ if __name__ == '__main__':
 
     cnt_detected = 0
     for job in tqdm(jobs):
-        cnt_detect += job.get()
+        cnt_detected += job.get()
     
-    print(f'processed {cnt} images, {cnt_no_detect} images have landmarks detected')
+    print(f'processed {cnt} images, {cnt_detected} images have landmarks detected')
