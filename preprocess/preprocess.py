@@ -13,15 +13,9 @@ import torch
 import torch.multiprocessing as mp
 from torch.multiprocessing import Pool, TimeoutError
 
-
-def process(img_file, output_img, detectors, sps, num_workers):
-    worker_id = mp.current_process()._identity[0] % num_workers
-    if worker_id in detectors:
-        detector = detectors[worker_id]
-        sp = sps[worker_id]
-    else:
-        detector = detectors[worker_id] = dlib.get_frontal_face_detector()
-        sp = sps[worker_id] = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+def process(img_file, output_img):
+    detector = process.detector
+    sp = process.sp
 
     output_size = 256
     transform_size=4096
@@ -115,6 +109,10 @@ def process(img_file, output_img, detectors, sps, num_workers):
 
     return True
 
+def init_worker(func):
+    func.detector = dlib.get_frontal_face_detector()
+    func.sp = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
@@ -123,12 +121,9 @@ if __name__ == '__main__':
     parser.add_argument("--num_workers", type=int, default=8)
     args = parser.parse_args()
 
-    pool = Pool(processes=args.num_workers)
+    pool = Pool(processes=args.num_workers, initializer=init_worker, initargs=(process,))
 
     torch.backends.cudnn.benchmark = False
-
-    detectors = {}
-    sps = {}
 
     os.makedirs(args.output_dir, exist_ok=True)
     img_files = [
@@ -146,7 +141,7 @@ if __name__ == '__main__':
         cnt += 1
         if os.path.isfile(output_img):
             continue
-        p = pool.apply_async(process, args=(img_file, output_img, detectors, sps, args.num_workers))
+        p = pool.apply_async(process, args=(img_file, output_img))
         jobs.append(p)
 
     cnt_no_detect = 0
