@@ -14,12 +14,18 @@ import torch.multiprocessing as mp
 from torch.multiprocessing import Pool, TimeoutError
 
 
-def process(img_file, output_img):
+def process(img_file, output_img, detectors, sps, num_workers):
+    worker_id = mp.current_process()._identity[0] % num_workers
+    if worker_id in detectors:
+        detector = detectors[worker_id]
+        sp = sps[worker_id]
+    else:
+        detector = detectors[worker_id] = dlib.get_frontal_face_detector()
+        sp = sps[worker_id] = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+
     output_size = 256
     transform_size=4096
     enable_padding=True
-    detector = dlib.get_frontal_face_detector()
-    sp = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
     img = dlib.load_rgb_image(img_file)
     dets = detector(img, 1)
@@ -121,6 +127,9 @@ if __name__ == '__main__':
 
     torch.backends.cudnn.benchmark = False
 
+    detectors = {}
+    sps = {}
+
     os.makedirs(args.output_dir, exist_ok=True)
     img_files = [
                 os.path.join(path, filename)
@@ -137,7 +146,7 @@ if __name__ == '__main__':
         cnt += 1
         if os.path.isfile(output_img):
             continue
-        p = pool.apply_async(process, args=(img_file, output_img))
+        p = pool.apply_async(process, args=(img_file, output_img, detectors, sps, args.num_workers))
         jobs.append(p)
 
     cnt_no_detect = 0
