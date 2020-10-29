@@ -10,38 +10,21 @@ from tqdm import tqdm
 
 import torch
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--root", type=str, required=True)
-parser.add_argument("--output_dir", type=str, required=True)
-args = parser.parse_args()
+import torch.multiprocessing as mp
+from torch.multiprocessing import Pool, TimeoutError
 
-output_size = 256
-transform_size=4096
-enable_padding=True
-detector = dlib.get_frontal_face_detector()
-sp = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
-torch.backends.cudnn.benchmark = False
+def process(img_file, output_img):
+    output_size = 256
+    transform_size=4096
+    enable_padding=True
+    detector = dlib.get_frontal_face_detector()
+    sp = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
-os.makedirs(args.output_dir, exist_ok=True)
-img_files = [
-            os.path.join(path, filename)
-            for path, dirs, files in os.walk(args.root)
-            for filename in files
-            if filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg")
-        ]
-img_files.sort()
-
-cnt = 0
-for img_file in tqdm(img_files):
-    output_img = os.path.join(args.output_dir, f"{cnt:08}.png")
-    if os.path.isfile(output_img):
-        cnt += 1
-        continue
     img = dlib.load_rgb_image(img_file)
     dets = detector(img, 1)
-    if len(dets) < 0:
-        print("no face landmark detected")
+    if len(dets) <= 0:
+        return False
     else:
         shape = sp(img, dets[0])
         points = np.empty([68, 2], dtype=int)
@@ -123,4 +106,42 @@ for img_file in tqdm(img_files):
 
     # Save aligned image.
     img.save(output_img)
-    cnt += 1
+
+    return True
+
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--root", type=str, required=True)
+    parser.add_argument("--output_dir", type=str, required=True)
+    parser.add_argument("--num_workers", type=int, default=8)
+    args = parser.parse_args()
+
+    pool = Pool(processes=args.num_workers)
+
+    torch.backends.cudnn.benchmark = False
+
+    os.makedirs(args.output_dir, exist_ok=True)
+    img_files = [
+                os.path.join(path, filename)
+                for path, dirs, files in os.walk(args.root, followlinks=True)
+                for filename in files
+                if filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg")
+            ]
+    img_files.sort()
+
+    jobs = []
+    cnt = 0
+    for img_file in tqdm(img_files):
+        output_img = os.path.join(args.output_dir, f"{cnt:08}.png")
+        cnt += 1
+        if os.path.isfile(output_img):
+            continue
+        p = pool.apply_async(process, args=(img_file, output_img))
+        jobs.append(p)
+
+    cnt_no_detect = 0
+    for job in tqdm(jobs):
+        cnt_no_detect += job.get()
+    
+    print(f'processed {cnt} images, {cnt_no_detect} images have no landmarks detected')
