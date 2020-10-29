@@ -144,8 +144,8 @@ if __name__ == '__main__':
         p = pool.apply_async(process, args=(img_file, output_img))
         jobs.append(p)
 
-    cnt_no_detect = 0
+    cnt_detected = 0
     for job in tqdm(jobs):
-        cnt_no_detect += job.get()
+        cnt_detect += job.get()
     
-    print(f'processed {cnt} images, {cnt_no_detect} images have no landmarks detected')
+    print(f'processed {cnt} images, {cnt_no_detect} images have landmarks detected')
