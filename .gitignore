@@ -1,3 +1,5 @@
 processed-dataset
 dataset
 Arcface.pth
+*.pyc
+log
