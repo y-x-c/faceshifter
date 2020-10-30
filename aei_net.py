@@ -104,13 +104,13 @@ class AEINet(pl.LightningModule):
         loss = torch.stack([x["loss"] for x in outputs]).mean()
         validation_image = []
         for x in outputs:
-            validation_image = validation_image + [x['target'], x['source'], x["output"]]
+            validation_image = validation_image + [x['source'], x['target'], x["output"]]
         validation_image = torchvision.utils.make_grid(validation_image, nrow=3)
 
         self.logger.experiment.add_scalar("Validation Loss", loss.item(), self.global_step)
         self.logger.experiment.add_image("Validation Image", validation_image, self.global_step)
 
-        return {"loss": loss, "image": validation_image, }
+        return {"val_loss": loss, "image": validation_image, }
 
 
     def configure_optimizers(self):
@@ -129,7 +129,7 @@ class AEINet(pl.LightningModule):
             transforms.CenterCrop((256, 256)),
             transforms.ToTensor(),
             ])
-        dataset = AEI_Dataset(self.hp.data.dataset_dir, transform=transform)
+        dataset = AEI_Dataset(self.hp.data.dataset_dir, transform=transform, num_samples=self.hp.data.num_train_samples)
         return DataLoader(dataset, batch_size=self.hp.model.batch_size, num_workers=self.hp.model.num_workers, drop_last=True, pin_memory=True)
 
     def val_dataloader(self):

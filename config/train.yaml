@@ -10,6 +10,7 @@ arcface:
 data:
   dataset_dir: '/DATA/processed-dataset/train'
   valset_dir: '/DATA/processed-dataset/val-10'
+  num_train_samples: 100000
 
 model:
   learning_rate_E_G: 4e-4
@@ -22,3 +23,5 @@ model:
 
   num_workers: 48
   grad_clip: 0.0
+
+  limit_train_batches: 10000

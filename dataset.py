@@ -12,15 +12,26 @@ from torch.utils.data import Dataset
 import warnings
 
 class AEI_Dataset(Dataset):
-    def __init__(self, root, transform=None):
+    def __init__(self, root, transform=None, num_samples=0):
         super(AEI_Dataset, self).__init__()
         self.root = root
-        self.files = [
-            os.path.join(path, filename)
-            for path, dirs, files in os.walk(root)
-            for filename in files
-            if filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg")
-        ]
+        if num_samples <= 0:
+            self.files = [
+                os.path.join(path, filename)
+                for path, dirs, files in os.walk(root)
+                for filename in files
+                if filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg")
+            ]
+        else:
+            self.files = [
+                os.path.join(root, "%08d.png" % i)
+                for i in range(num_samples)
+            ]
+            self.files = [
+                p
+                for p in self.files
+                if os.path.exists(p)
+            ]
         self.transform = transform
 
 
