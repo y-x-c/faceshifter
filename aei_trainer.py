@@ -24,7 +24,6 @@ def main(args):
 
     trainer = Trainer(
         logger=pl_loggers.TensorBoardLogger(hp.log.log_dir),
-        early_stop_callback=None,
         checkpoint_callback=checkpoint_callback,
         weights_save_path=save_path,
         gpus=-1 if args.gpus is None else args.gpus,
@@ -34,6 +33,7 @@ def main(args):
         gradient_clip_val=hp.model.grad_clip,
         fast_dev_run=args.fast_dev_run,
         val_check_interval=args.val_interval,
+        limit_val_batches=10,
         progress_bar_refresh_rate=1,
         max_epochs=10000,
     )
