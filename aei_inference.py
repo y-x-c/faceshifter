@@ -28,8 +28,8 @@ model.eval()
 model.freeze()
 model.to(device)
 
-target_img = transforms.ToTensor()(Image.open(args.target_image)).unsqueeze(0).to(device)
-source_img = transforms.ToTensor()(Image.open(args.source_image)).unsqueeze(0).to(device)
+target_img = transforms.ToTensor()(Image.open(args.target_image)).unsqueeze(0).to(device)[:,:3]
+source_img = transforms.ToTensor()(Image.open(args.source_image)).unsqueeze(0).to(device)[:,:3]
 with torch.no_grad():
     output, _, _, _, _ = model.forward(target_img, source_img)
 output = transforms.ToPILImage()(output.cpu().squeeze().clamp(0, 1))
