@@ -24,7 +24,7 @@ class AEI_Dataset(Dataset):
             ]
         else:
             with open(os.path.join(root, 'train.list'), 'r') as f:
-                self.files = [os.path.join(root, filename) for filename in f.readlines()]
+                self.files = [os.path.join(root, filename.strip()) for filename in f.readlines()]
             
             self.files = self.files[:num_samples]
         self.transform = transform
