@@ -23,15 +23,10 @@ class AEI_Dataset(Dataset):
                 if filename.endswith(".png") or filename.endswith(".jpg") or filename.endswith(".jpeg")
             ]
         else:
-            self.files = [
-                os.path.join(root, "%08d.png" % i)
-                for i in range(num_samples)
-            ]
-            self.files = [
-                p
-                for p in self.files
-                if os.path.exists(p)
-            ]
+            with open(os.path.join(root, 'train.list'), 'r') as f:
+                self.files = [os.path.join(root, filename) for filename in f.readlines()]
+            
+            self.files = self.files[:num_samples]
         self.transform = transform
 
 

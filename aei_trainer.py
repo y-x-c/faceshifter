@@ -16,7 +16,7 @@ def main(args):
     os.makedirs(save_path, exist_ok=True)
 
     checkpoint_callback = ModelCheckpoint(
-        filepath=os.path.join(hp.log.chkpt_dir, args.name, '{epoch}'),
+        filepath=os.path.join(hp.log.chkpt_dir, args.name, '{epoch}-{step}'),
         save_last=True,
         monitor='val_loss',
         verbose=True,
